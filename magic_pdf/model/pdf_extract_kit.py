@@ -1,8 +1,9 @@
 from loguru import logger
 import os
 import time
-
+import shutil
 from magic_pdf.libs.Constants import *
+from magic_pdf.libs.path_utils import get_absolute_path
 
 os.environ['NO_ALBUMENTATIONS_UPDATE'] = '1'  # 禁止albumentations检查更新
 try:
@@ -154,6 +155,21 @@ class CustomPEKModel:
         # init table model
         if self.apply_table:
             table_model_dir = self.configs["weights"][self.table_model_type]
+            table_model_rec_dir = os.path.join(models_dir, table_model_dir, REC_MODEL_DIR)
+            table_model_det_dir = os.path.join(models_dir, table_model_dir, DETECT_MODEL_DIR)
+            # share models with ocr
+            rec_dest_dir = get_absolute_path(PP_OCR_REC_DEFAULT_DIR)
+            det_dest_dir = get_absolute_path(PP_OCR_DET_DEFAULT_DIR)
+            if not os.path.exists(rec_dest_dir):
+                # os.makedirs(rec_dest_dir, exist_ok=True)
+                shutil.copytree(table_model_rec_dir, rec_dest_dir)
+                logger.info(f"copy {table_model_rec_dir} to {rec_dest_dir}")
+                # 检查目标目录是否存在
+            if not os.path.exists(det_dest_dir):
+                # 目标目录不存在，直接复制
+                # os.makedirs(det_dest_dir, exist_ok=True)
+                shutil.copytree(table_model_det_dir, det_dest_dir)
+
             self.table_model = table_model_init(self.table_model_type, str(os.path.join(models_dir, table_model_dir)),
                                                 max_time=self.table_max_time, _device_=self.device)
         logger.info('DocAnalysis init done!')

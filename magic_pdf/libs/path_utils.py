@@ -1,4 +1,4 @@
-
+import os
 
 def remove_non_official_s3_args(s3path):
     """
@@ -30,3 +30,11 @@ def parse_s3_range_params(s3path: str):
     if len(arr) == 1:
         return None
     return arr[1].split(",")
+
+def get_absolute_path(relative_path):
+    # 展开用户目录
+    expanded_path = os.path.expanduser(relative_path)
+    # 将相对路径转换为绝对路径
+    absolute_path = os.path.abspath(expanded_path)
+
+    return absolute_path
