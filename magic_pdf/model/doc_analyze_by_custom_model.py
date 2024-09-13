@@ -3,6 +3,7 @@ import time
 import fitz
 import numpy as np
 from loguru import logger
+import concurrent.futures
 
 from magic_pdf.libs.config_reader import get_local_models_dir, get_device, get_table_recog_config
 from magic_pdf.model.model_list import MODEL
@@ -23,7 +24,56 @@ def remove_duplicates_dicts(lst):
     return unique_dicts
 
 
-def load_images_from_pdf(pdf_bytes: bytes, dpi=200) -> list:
+
+
+
+def load_images_from_pdf(pdf_bytes: bytes, dpi=200, max_workers=2) -> list:
+    """
+    从PDF字节流中加载图像，并使用多线程加速处理。
+    """
+    try:
+        from PIL import Image
+    except ImportError:
+        logger.error("Pillow not installed, please install by pip.")
+        exit(1)
+
+    def load_image_from_page(page, dpi=200):
+        """
+        加载单页图像。
+        """
+        # try:
+        mat = fitz.Matrix(dpi / 72, dpi / 72)
+        pm = page.get_pixmap(matrix=mat, alpha=False)
+        # 如果宽度或高度在缩放后超过 9000，则不再进一步缩放。
+        if pm.width > 9000 or pm.height > 9000:
+            pm = page.get_pixmap(matrix=fitz.Matrix(1, 1), alpha=False)
+        img = Image.frombytes("RGB", (pm.width, pm.height), pm.samples)
+        img = np.array(img)
+        img_dict = {"img": img, "width": pm.width, "height": pm.height}
+        return img_dict
+        # except Exception as e:
+        #     logger.error(f"Error processing page: {e}")
+        #     return None
+
+    images = []
+    with fitz.open("pdf", pdf_bytes) as doc:
+        # 使用多线程处理每一页
+        with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+            # 提交任务并收集结果
+            futures = [executor.submit(load_image_from_page, doc[index], dpi) for index in range(doc.page_count)]
+
+            # 收集处理结果
+            for future in concurrent.futures.as_completed(futures):
+                result = future.result()
+                if result is not None:
+                    images.append(result)
+
+    return images
+
+
+
+
+def load_images_from_pdf2(pdf_bytes: bytes, dpi=200) -> list:
     try:
         from PIL import Image
     except ImportError:
@@ -108,8 +158,12 @@ def doc_analyze(pdf_bytes: bytes, ocr: bool = False, show_log: bool = False):
     model_manager = ModelSingleton()
     custom_model = model_manager.get_model(ocr, show_log)
 
+    load_image_start = time.time()
     images = load_images_from_pdf(pdf_bytes)
-
+    load_image_end = time.time()
+    cost = len(images) / (load_image_end - load_image_start)
+    logger.info(f"load image cost: {cost} page/s")
+    logger.info(f"load image cost time: {load_image_end - load_image_start}")
     model_json = []
     doc_analyze_start = time.time()
     for index, img_dict in enumerate(images):
