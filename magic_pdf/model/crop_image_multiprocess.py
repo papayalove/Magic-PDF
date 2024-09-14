@@ -3,7 +3,6 @@ from PIL import Image
 import numpy as np
 from multiprocessing import Pool
 import logging
-
 logger = logging.getLogger(__name__)
 
 
@@ -30,7 +29,7 @@ def process_page(args):
     return img_dict
 
 
-def load_images_from_pdf(pdf_bytes: bytes, dpi=200, max_worker=2) -> list:
+def load_images_from_pdf(pdf_bytes: bytes, dpi=200, pool=None) -> list:
     try:
         from PIL import Image
     except ImportError:
@@ -42,12 +41,12 @@ def load_images_from_pdf(pdf_bytes: bytes, dpi=200, max_worker=2) -> list:
         num_pages = doc.page_count
 
         # 创建一个固定大小的进程池
-        with Pool(processes=min(max_worker, num_pages)) as pool:
+        # with Pool(processes=min(max_worker, num_pages)) as pool:
             # 准备参数列表，每个元素都是一个元组 (page_index, pdf_bytes, dpi)
-            page_args = [(i, pdf_bytes, dpi) for i in range(num_pages)]
+        page_args = [(i, pdf_bytes, dpi) for i in range(num_pages)]
 
-            # 使用map应用process_page函数到每个页面上
-            images = pool.map(process_page, page_args)
+        # 使用map应用process_page函数到每个页面上
+        images = pool.map(process_page, page_args)
     images = sorted(images, key=lambda x:x["image_id"])
     return images
 

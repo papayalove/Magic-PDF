@@ -1,6 +1,6 @@
 import os
 import json
-
+from multiprocessing import Pool
 from loguru import logger
 
 from magic_pdf.pipe.UNIPipe import UNIPipe
@@ -20,10 +20,11 @@ if __name__ == '__main__':
         model_path = os.path.join(current_script_dir, f"{demo_name}.json")
         pdf_bytes = open(pdf_path, "rb").read()
         start_time = time.time()
-        images = load_images_from_pdf(pdf_bytes, dpi=200, max_worker=8)
+        pool = Pool(processes=8)
+        images = load_images_from_pdf(pdf_bytes, dpi=200, pool=pool)
         end_time = time.time()
         logger.info(f"images crop speed: {len(pdf_bytes)/(end_time-start_time)} pages/s")
-        logger.info(f"images crop cost: {len(pdf_bytes) / (end_time - start_time)} s")
+        logger.info(f"images crop cost: {(end_time - start_time)} s")
         # print(f"===========================================image length: {len(images)}")
         # model_json = json.loads(open(model_path, "r", encoding="utf-8").read())
         model_json = []  # model_json传空list使用内置模型解析
@@ -47,3 +48,6 @@ if __name__ == '__main__':
             f.write(md_content)
     except Exception as e:
         logger.exception(e)
+    finally:
+        pool.close()
+        pool.join()
