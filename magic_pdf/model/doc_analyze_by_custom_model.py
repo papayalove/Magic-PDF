@@ -104,12 +104,13 @@ def custom_model_init(ocr: bool = False, show_log: bool = False):
 
 
 def doc_analyze(pdf_bytes: bytes, ocr: bool = False, show_log: bool = False,
-                start_page_id=0, end_page_id=None):
+                start_page_id=0, end_page_id=None, images=None):
 
     model_manager = ModelSingleton()
     custom_model = model_manager.get_model(ocr, show_log)
 
-    images = load_images_from_pdf(pdf_bytes)
+    if images is None:
+        images = load_images_from_pdf(pdf_bytes)
 
     # end_page_id = end_page_id if end_page_id else len(images) - 1
     end_page_id = end_page_id if end_page_id is not None and end_page_id >= 0 else len(images) - 1

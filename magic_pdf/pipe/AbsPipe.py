@@ -17,7 +17,7 @@ class AbsPipe(ABC):
     PIP_TXT = "txt"
 
     def __init__(self, pdf_bytes: bytes, model_list: list, image_writer: AbsReaderWriter, is_debug: bool = False,
-                 start_page_id=0, end_page_id=None):
+                 start_page_id=0, end_page_id=None, images=None):
         self.pdf_bytes = pdf_bytes
         self.model_list = model_list
         self.image_writer = image_writer
@@ -25,7 +25,8 @@ class AbsPipe(ABC):
         self.is_debug = is_debug
         self.start_page_id = start_page_id
         self.end_page_id = end_page_id
-    
+        self.images = images
+
     def get_compress_pdf_mid_data(self):
         return JsonCompressor.compress_json(self.pdf_mid_data)
 
