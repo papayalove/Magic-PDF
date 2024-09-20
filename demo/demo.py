@@ -2,13 +2,13 @@ import os
 import json
 from multiprocessing import Pool
 from loguru import logger
-
+from magic_pdf.pipe.AbsPipe import AbsPipe
 from magic_pdf.pipe.UNIPipe import UNIPipe
 from magic_pdf.rw.DiskReaderWriter import DiskReaderWriter
 from magic_pdf.model.crop_image_multiprocess import load_images_from_pdf
 import magic_pdf.model as model_config
 model_config.__use_inside_model__ = True
-
+from magic_pdf.model.doc_analyze_by_custom_model import ModelSingleton
 
 if __name__ == '__main__':
     import time
@@ -21,6 +21,7 @@ if __name__ == '__main__':
         pdf_bytes = open(pdf_path, "rb").read()
         start_time = time.time()
         pool = Pool(processes=2)
+
         images = load_images_from_pdf(pdf_bytes, dpi=200, pool=pool)
         end_time = time.time()
         logger.info(f"images crop speed: {len(pdf_bytes)/(end_time-start_time)} pages/s")
@@ -35,10 +36,17 @@ if __name__ == '__main__':
 
         pipe = UNIPipe(pdf_bytes, jso_useful_key, image_writer, images=images)
         pipe.pipe_classify()
+        if AbsPipe.PIP_OCR==pipe.pdf_type:
+            ocr = True
+        else:
+            ocr = False
+
+        model_manager = ModelSingleton()
+        custom_model = model_manager.get_model(ocr, False)
         """如果没有传入有效的模型数据，则使用内置model解析"""
         if len(model_json) == 0:
             if model_config.__use_inside_model__:
-                pipe.pipe_analyze()
+                pipe.pipe_analyze(model=custom_model)
             else:
                 logger.error("need model list input")
                 exit(1)

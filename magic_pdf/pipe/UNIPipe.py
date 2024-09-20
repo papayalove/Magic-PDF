@@ -25,13 +25,13 @@ class UNIPipe(AbsPipe):
     def pipe_classify(self):
         self.pdf_type = AbsPipe.classify(self.pdf_bytes)
 
-    def pipe_analyze(self):
+    def pipe_analyze(self, model):
         if self.pdf_type == self.PIP_TXT:
             self.model_list = doc_analyze(self.pdf_bytes, ocr=False,
-                                          start_page_id=self.start_page_id, end_page_id=self.end_page_id, images=self.images)
+                                          start_page_id=self.start_page_id, end_page_id=self.end_page_id, images=self.images, custom_model=model)
         elif self.pdf_type == self.PIP_OCR:
             self.model_list = doc_analyze(self.pdf_bytes, ocr=True,
-                                          start_page_id=self.start_page_id, end_page_id=self.end_page_id, images=self.images)
+                                          start_page_id=self.start_page_id, end_page_id=self.end_page_id, images=self.images, custom_model=model)
 
     def pipe_parse(self):
         if self.pdf_type == self.PIP_TXT:

@@ -38,7 +38,7 @@ class AbsPipe(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def pipe_analyze(self):
+    def pipe_analyze(self, model):
         """
         有状态的跑模型分析
         """
