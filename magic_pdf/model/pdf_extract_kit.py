@@ -59,13 +59,12 @@ def mfd_model_init(weight):
 def mfr_model_init(weight_dir, cfg_path, _device_='cpu'):
     args = argparse.Namespace(cfg_path=cfg_path, options=None)
     cfg = Config(args)
-    cfg.config.model.pretrained = os.path.join(weight_dir, "pytorch_model.pth")
+    cfg.config.model.pretrained = os.path.join(weight_dir, "pytorch_model.bin")
     cfg.config.model.model_config.model_name = weight_dir
     cfg.config.model.tokenizer_config.path = weight_dir
     task = tasks.setup_task(cfg)
     model = task.build_model(cfg)
-    model.to(_device_)
-    model.eval()
+    model = model.to(_device_)
     if 'cuda' in _device_:
         decoder_runner = GraphRunner(model.model.model.decoder.model.decoder, max_batchs=128, max_kvlens=256,
                                      device=_device_)
