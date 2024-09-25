@@ -59,12 +59,13 @@ def mfd_model_init(weight):
 def mfr_model_init(weight_dir, cfg_path, _device_='cpu'):
     args = argparse.Namespace(cfg_path=cfg_path, options=None)
     cfg = Config(args)
-    cfg.config.model.pretrained = os.path.join(weight_dir, "pytorch_model.bin")
+    cfg.config.model.pretrained = os.path.join(weight_dir, "pytorch_model.pth")
     cfg.config.model.model_config.model_name = weight_dir
     cfg.config.model.tokenizer_config.path = weight_dir
     task = tasks.setup_task(cfg)
     model = task.build_model(cfg)
-    model = model.to(_device_)
+    model.to(_device_)
+    model.eval()
     if 'cuda' in _device_:
         decoder_runner = GraphRunner(model.model.model.decoder.model.decoder, max_batchs=128, max_kvlens=256,
                                      device=_device_)
@@ -154,6 +155,21 @@ def atom_model_init(model_name: str, **kwargs):
 
     return atom_model
 
+#  Unified crop img logic
+def crop_img(input_res, input_pil_img, crop_paste_x=0, crop_paste_y=0):
+    crop_xmin, crop_ymin = int(input_res['poly'][0]), int(input_res['poly'][1])
+    crop_xmax, crop_ymax = int(input_res['poly'][4]), int(input_res['poly'][5])
+    # Create a white background with an additional width and height of 50
+    crop_new_width = crop_xmax - crop_xmin + crop_paste_x * 2
+    crop_new_height = crop_ymax - crop_ymin + crop_paste_y * 2
+    return_image = Image.new('RGB', (crop_new_width, crop_new_height), 'white')
+
+    # Crop image
+    crop_box = (crop_xmin, crop_ymin, crop_xmax, crop_ymax)
+    cropped_img = input_pil_img.crop(crop_box)
+    return_image.paste(cropped_img, (crop_paste_x, crop_paste_y))
+    return_list = [crop_paste_x, crop_paste_y, crop_xmin, crop_ymin, crop_xmax, crop_ymax, crop_new_width, crop_new_height]
+    return return_image, return_list
 
 class CustomPEKModel:
 
@@ -309,21 +325,6 @@ class CustomPEKModel:
                 table_res_list.append(res)
 
         #  Unified crop img logic
-        def crop_img(input_res, input_pil_img, crop_paste_x=0, crop_paste_y=0):
-            crop_xmin, crop_ymin = int(input_res['poly'][0]), int(input_res['poly'][1])
-            crop_xmax, crop_ymax = int(input_res['poly'][4]), int(input_res['poly'][5])
-            # Create a white background with an additional width and height of 50
-            crop_new_width = crop_xmax - crop_xmin + crop_paste_x * 2
-            crop_new_height = crop_ymax - crop_ymin + crop_paste_y * 2
-            return_image = Image.new('RGB', (crop_new_width, crop_new_height), 'white')
-
-            # Crop image
-            crop_box = (crop_xmin, crop_ymin, crop_xmax, crop_ymax)
-            cropped_img = input_pil_img.crop(crop_box)
-            return_image.paste(cropped_img, (crop_paste_x, crop_paste_y))
-            return_list = [crop_paste_x, crop_paste_y, crop_xmin, crop_ymin, crop_xmax, crop_ymax, crop_new_width, crop_new_height]
-            return return_image, return_list
-
         pil_img = Image.fromarray(image)
 
         # ocr识别
