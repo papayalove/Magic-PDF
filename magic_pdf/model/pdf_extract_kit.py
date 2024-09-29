@@ -115,6 +115,7 @@ class AtomModelSingleton:
     def get_atom_model(self, atom_model_name: str, **kwargs):
         if atom_model_name not in self._models:
             self._models[atom_model_name] = atom_model_init(model_name=atom_model_name, **kwargs)
+            logger.info(f"NEW INIT MODEL >> {atom_model_name}......")
         return self._models[atom_model_name]
 
 
@@ -169,6 +170,9 @@ def crop_img(input_res, input_pil_img, crop_paste_x=0, crop_paste_y=0):
     return_image.paste(cropped_img, (crop_paste_x, crop_paste_y))
     return_list = [crop_paste_x, crop_paste_y, crop_xmin, crop_ymin, crop_xmax, crop_ymax, crop_new_width, crop_new_height]
     return return_image, return_list
+
+
+
 
 class CustomPEKModel:
 
@@ -265,6 +269,11 @@ class CustomPEKModel:
                 device=self.device
             )
 
+        self.__clean_mem_per_page = os.environ.get("CLEAN_MEM_PAGE_BATCH", 10) # 多少个页面之后执行一次清空GPU缓存
+        self.__processed_pages_cnt = 0
+        
+
+
         logger.info('DocAnalysis init done!')
 
     def __call__(self, image):
@@ -307,6 +316,23 @@ class CustomPEKModel:
                 res['latex'] = latex_rm_whitespace(latex)
             mfr_cost = round(time.time() - mfr_start, 2)
             logger.info(f"formula nums: {len(mf_image_list)}, mfr time: {mfr_cost}")
+        ###############################
+        #
+        # 回收显存
+        #
+        ################################
+        def __clean_memory():
+            import gc
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+                torch.cuda.ipc_collect()
+            gc.collect()
+
+        self.__processed_pages_cnt += 1
+        if self.__processed_pages_cnt % self.__clean_mem_per_page==0:
+            # logger.info("清除显存 start")
+            __clean_memory()
+            # logger.info("清除显存 end")
 
         # Select regions for OCR / formula regions / table regions
         ocr_res_list = []
@@ -412,3 +438,4 @@ class CustomPEKModel:
             logger.info(f"table cost: {table_cost}")
 
         return layout_res
+    
