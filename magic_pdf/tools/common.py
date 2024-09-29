@@ -76,7 +76,7 @@ def do_parse(
 
     if len(model_list) == 0:
         if model_config.__use_inside_model__:
-            pipe.pipe_analyze()
+            pipe.pipe_analyze(model=None)
             orig_model_list = copy.deepcopy(pipe.model_list)
         else:
             logger.error('need model list input')

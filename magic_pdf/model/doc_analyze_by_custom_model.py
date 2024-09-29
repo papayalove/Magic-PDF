@@ -1,3 +1,4 @@
+import datetime
 import time
 
 import fitz
@@ -111,7 +112,12 @@ def doc_analyze(pdf_bytes: bytes, ocr: bool = False, show_log: bool = False,
         custom_model = model_manager.get_model(ocr, show_log)
 
     if images is None:
+        start_time = datetime.datetime.now()
         images = load_images_from_pdf(pdf_bytes)
+        end_time = datetime.datetime.now()
+        time_wasted_seconds = (end_time - start_time).seconds 
+        logger.info(f"截图coast {time_wasted_seconds}")
+        
 
     # end_page_id = end_page_id if end_page_id else len(images) - 1
     end_page_id = end_page_id if end_page_id is not None and end_page_id >= 0 else len(images) - 1
@@ -119,7 +125,7 @@ def doc_analyze(pdf_bytes: bytes, ocr: bool = False, show_log: bool = False,
     if end_page_id > len(images) - 1:
         logger.warning("end_page_id is out of range, use images length")
         end_page_id = len(images) - 1
-
+   
     model_json = []
     doc_analyze_start = time.time()
 
