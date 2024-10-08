@@ -35,7 +35,7 @@ def process(pdf_list):
             """如果没有传入有效的模型数据，则使用内置model解析"""
             if len(model_json) == 0:
                 if model_config.__use_inside_model__:
-                    pipe.pipe_analyze()
+                    pipe.pipe_analyze(None)
                 else:
                     logger.error("need model list input")
                     exit(1)
