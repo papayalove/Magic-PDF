@@ -269,7 +269,7 @@ class CustomPEKModel:
                 device=self.device
             )
 
-        self.__clean_mem_per_page = os.environ.get("CLEAN_MEM_PAGE_BATCH", 10) # 多少个页面之后执行一次清空GPU缓存
+        self.__clean_mem_per_page = int(os.environ.get("CLEAN_MEM_PAGE_BATCH", 10)) # 多少个页面之后执行一次清空GPU缓存
         self.__processed_pages_cnt = 0
         
 
