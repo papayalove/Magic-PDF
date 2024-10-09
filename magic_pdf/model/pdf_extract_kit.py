@@ -114,6 +114,7 @@ class AtomModelSingleton:
 
     def get_atom_model(self, atom_model_name: str, **kwargs):
         if atom_model_name not in self._models:
+            logger.info(f"===============debug config: {kwargs}====================")
             self._models[atom_model_name] = atom_model_init(model_name=atom_model_name, **kwargs)
             logger.info(f"NEW INIT MODEL >> {atom_model_name}......")
         return self._models[atom_model_name]
