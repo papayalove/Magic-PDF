@@ -2,9 +2,6 @@
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
 
 name: mineru
-on:
-  schedule:
-    - cron: '0 22 * * *'  # 每天晚上 10 点执行
 jobs:
   cli-test:
     runs-on: pdf
@@ -23,6 +20,7 @@ jobs:
         source activate mineru
         conda env list
         pip show coverage
+        git checkout "dev"
         # cd $GITHUB_WORKSPACE && sh tests/retry_env.sh
         cd $GITHUB_WORKSPACE && python tests/clean_coverage.py      
         cd $GITHUB_WORKSPACE && coverage run -m pytest tests/unittest/ --cov=magic_pdf/  --cov-report html --cov-report term-missing

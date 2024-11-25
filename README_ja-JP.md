@@ -1,3 +1,5 @@
+> [!Warning]
+> このドキュメントはすでに古くなっています。最新版のドキュメントを参照してください：[ENGLISH](README.md)。
 <div id="top">
 
 <p align="center">
@@ -16,6 +18,7 @@
 [![Downloads](https://static.pepy.tech/badge/magic-pdf/month)](https://pepy.tech/project/magic-pdf)
 
 <a href="https://trendshift.io/repositories/11174" target="_blank"><img src="https://trendshift.io/api/badge/repositories/11174" alt="opendatalab%2FMinerU | Trendshift" style="width: 200px; height: 55px;"/></a>
+
 
 
 
