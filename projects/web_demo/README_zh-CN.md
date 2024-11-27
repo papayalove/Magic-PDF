@@ -39,7 +39,7 @@ yarn build
 # 先进入后端目录
 cd projects/web_demo
 # 安装依赖
-pip3 install -r requirements.txt  -i https://pypi.tuna.tsinghua.edu.cn/simple
+pip3 install -r requirements.txt  -i https://mirrors.aliyun.com/pypi/simple
 ```
 
 3. 启动服务
@@ -55,5 +55,5 @@ python3 app.py 或者 python app.py
 ps：接口文档
 
 ```
-在浏览器打开 mineru-web接口文档.html
+https://apifox.com/apidoc/shared-b8eda098-ab9c-4cb3-9432-62be9be9c6f7
 ```
