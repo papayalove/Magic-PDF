@@ -46,8 +46,8 @@ def load_images_from_pdf(pdf_bytes: bytes, dpi=200, start_page_id=0, end_page_id
                 mat = fitz.Matrix(dpi / 72, dpi / 72)
                 pm = page.get_pixmap(matrix=mat, alpha=False)
 
-                # If the width or height exceeds 9000 after scaling, do not scale further.
-                if pm.width > 9000 or pm.height > 9000:
+                # If the width or height exceeds 4500 after scaling, do not scale further.
+                if pm.width > 4500 or pm.height > 4500:
                     pm = page.get_pixmap(matrix=fitz.Matrix(1, 1), alpha=False)
 
                 img = Image.frombytes("RGB", (pm.width, pm.height), pm.samples)
@@ -163,7 +163,9 @@ def doc_analyze(pdf_bytes: bytes, ocr: bool = False, show_log: bool = False,
         page_width = img_dict["width"]
         page_height = img_dict["height"]
         if start_page_id <= index <= end_page_id:
+            page_start = time.time()
             result = custom_model(img)
+            logger.info(f'-----page_id : {index}, page total time: {round(time.time() - page_start, 2)}-----')
         else:
             result = []
         page_info = {"page_no": index, "height": page_height, "width": page_width}

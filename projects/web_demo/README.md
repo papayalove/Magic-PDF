@@ -40,7 +40,7 @@ yarn build
 # First, navigate to the back-end directory
 cd projects/web_demo
 # Install dependencies
-pip3 install -r requirements.txt  -i https://pypi.tuna.tsinghua.edu.cn/simple
+pip3 install -r requirements.txt  -i https://mirrors.aliyun.com/pypi/simple
 ```
 
 3. Start the service
@@ -56,5 +56,5 @@ python3 app.py or python app.py
 ps：API documentation
 
 ```
-Open the mineru-web API mineru-web接口文档.html in the browser
+https://apifox.com/apidoc/shared-b8eda098-ab9c-4cb3-9432-62be9be9c6f7
 ```

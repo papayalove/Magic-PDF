@@ -1,7 +1,7 @@
+import fitz
+from magic_pdf.config.constants import CROSS_PAGE
+from magic_pdf.config.ocr_content_type import BlockType, CategoryId, ContentType
 from magic_pdf.data.dataset import PymuDocDataset
-from magic_pdf.libs.commons import fitz  # PyMuPDF
-from magic_pdf.libs.Constants import CROSS_PAGE
-from magic_pdf.libs.ocr_content_type import BlockType, CategoryId, ContentType
 from magic_pdf.model.magic_model import MagicModel
 
 
@@ -249,7 +249,8 @@ def draw_span_bbox(pdf_info, pdf_bytes, out_path, filename):
                         page_dropped_list.append(span['bbox'])
         dropped_list.append(page_dropped_list)
         # 构造其余useful_list
-        for block in page['para_blocks']:
+        # for block in page['para_blocks']:  # span直接用分段合并前的结果就可以
+        for block in page['preproc_blocks']:
             if block['type'] in [
                 BlockType.Text,
                 BlockType.Title,
@@ -368,10 +369,16 @@ def draw_line_sort_bbox(pdf_info, pdf_bytes, out_path, filename):
             if block['type'] in [BlockType.Image, BlockType.Table]:
                 for sub_block in block['blocks']:
                     if sub_block['type'] in [BlockType.ImageBody, BlockType.TableBody]:
-                        for line in sub_block['virtual_lines']:
-                            bbox = line['bbox']
-                            index = line['index']
-                            page_line_list.append({'index': index, 'bbox': bbox})
+                        if len(sub_block['virtual_lines']) > 0 and sub_block['virtual_lines'][0].get('index', None) is not None:
+                            for line in sub_block['virtual_lines']:
+                                bbox = line['bbox']
+                                index = line['index']
+                                page_line_list.append({'index': index, 'bbox': bbox})
+                        else:
+                            for line in sub_block['lines']:
+                                bbox = line['bbox']
+                                index = line['index']
+                                page_line_list.append({'index': index, 'bbox': bbox})
                     elif sub_block['type'] in [BlockType.ImageCaption, BlockType.TableCaption, BlockType.ImageFootnote, BlockType.TableFootnote]:
                         for line in sub_block['lines']:
                             bbox = line['bbox']
