@@ -165,7 +165,7 @@ def merge_para_with_text(para_block):
             if content:
                 langs = ['zh', 'ja', 'ko']
                 # logger.info(f'block_lang: {block_lang}, content: {content}')
-                if block_lang in langs: # 中文/日语/韩文语境下，换行不需要空格分隔
+                if block_lang in langs:  # 中文/日语/韩文语境下，换行不需要空格分隔
                     if j == len(line['spans']) - 1:
                         para_text += content
                     else:
@@ -173,7 +173,8 @@ def merge_para_with_text(para_block):
                 else:
                     if span_type in [ContentType.Text, ContentType.InlineEquation]:
                         # 如果span是line的最后一个且末尾带有-连字符，那么末尾不应该加空格,同时应该把-删除
-                        if j == len(line['spans'])-1 and span_type == ContentType.Text and __is_hyphen_at_line_end(content):
+                        if j == len(line['spans']) - 1 and span_type == ContentType.Text and __is_hyphen_at_line_end(
+                                content):
                             para_text += content[:-1]
                         else:  # 西方文本语境下 content间需要空格分隔
                             para_text += f'{content} '
@@ -189,45 +190,67 @@ def merge_para_with_text(para_block):
 
 def para_to_standard_format_v2(para_block, img_buket_path, page_idx, drop_reason=None):
     para_type = para_block['type']
+    bbox = para_block['bbox']
     para_content = {}
     if para_type in [BlockType.Text, BlockType.List, BlockType.Index]:
         para_content = {
             'type': 'text',
             'text': merge_para_with_text(para_block),
+            'bbox': bbox
         }
     elif para_type == BlockType.Title:
         para_content = {
             'type': 'text',
             'text': merge_para_with_text(para_block),
             'text_level': 1,
+            'bbox': bbox
         }
     elif para_type == BlockType.InterlineEquation:
         para_content = {
             'type': 'equation',
             'text': merge_para_with_text(para_block),
             'text_format': 'latex',
+            'bbox': bbox
         }
     elif para_type == BlockType.Image:
-        para_content = {'type': 'image', 'img_path': '', 'img_caption': [], 'img_footnote': []}
+        para_content = {'type': 'image',
+                        'img_path': '',
+                        'img_caption': [],
+                        'img_footnote': [],
+                        'bbox': bbox,
+                        'bbox_body': [],
+                        'bbox_caption': [],
+                        'bbox_footnote': []}
         for block in para_block['blocks']:
             if block['type'] == BlockType.ImageBody:
                 for line in block['lines']:
                     for span in line['spans']:
                         if span['type'] == ContentType.Image:
                             if span.get('image_path', ''):
+                                para_content['bbox_body'] = span['bbox']
                                 para_content['img_path'] = join_path(img_buket_path, span['image_path'])
             if block['type'] == BlockType.ImageCaption:
+                para_content['bbox_caption'] = block['bbox']
                 para_content['img_caption'].append(merge_para_with_text(block))
             if block['type'] == BlockType.ImageFootnote:
+                para_content['bbox_footnote'] = block['bbox']
                 para_content['img_footnote'].append(merge_para_with_text(block))
     elif para_type == BlockType.Table:
-        para_content = {'type': 'table', 'img_path': '', 'table_caption': [], 'table_footnote': []}
+        para_content = {'type': 'table',
+                        'img_path': '',
+                        'table_caption': [],
+                        'table_footnote': [],
+                        'bbox': bbox,
+                        'bbox_body': [],
+                        'bbox_caption': [],
+                        'bbox_footnote': []
+                        }
         for block in para_block['blocks']:
             if block['type'] == BlockType.TableBody:
                 for line in block['lines']:
                     for span in line['spans']:
                         if span['type'] == ContentType.Table:
-
+                            para_content['bbox_body'] = span['bbox']
                             if span.get('latex', ''):
                                 para_content['table_body'] = f"\n\n$\n {span['latex']}\n$\n\n"
                             elif span.get('html', ''):
@@ -237,8 +260,10 @@ def para_to_standard_format_v2(para_block, img_buket_path, page_idx, drop_reason
                                 para_content['img_path'] = join_path(img_buket_path, span['image_path'])
 
             if block['type'] == BlockType.TableCaption:
+                para_content['bbox_caption'] = block['bbox']
                 para_content['table_caption'].append(merge_para_with_text(block))
             if block['type'] == BlockType.TableFootnote:
+                para_content['bbox_footnote'] = block['bbox']
                 para_content['table_footnote'].append(merge_para_with_text(block))
 
     para_content['page_idx'] = page_idx
@@ -274,7 +299,7 @@ def union_make(pdf_info_dict: list,
             else:
                 raise Exception('drop_mode can not be null')
 
-        paras_of_layout = page_info.get('para_blocks')
+        paras_of_layout = page_info.get('preproc_blocks')
         page_idx = page_info.get('page_idx')
         if not paras_of_layout:
             continue
