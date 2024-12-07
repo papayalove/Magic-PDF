@@ -57,3 +57,19 @@ pip install paddlepaddle-gpu==3.0.0b1 -i https://www.paddlepaddle.org.cn/package
 ```
 
 Reference: https://github.com/opendatalab/MinerU/issues/558
+
+### 7. On some Linux servers, the program immediately reports an error `Illegal instruction (core dumped)`
+
+This might be because the server's CPU does not support the AVX/AVX2 instruction set, or the CPU itself supports it but has been disabled by the system administrator. You can try contacting the system administrator to remove the restriction or change to a different server.
+
+References: https://github.com/opendatalab/MinerU/issues/591 , https://github.com/opendatalab/MinerU/issues/736
+
+
+### 8. Error when installing MinerU on CentOS 7 or Ubuntu 18: `ERROR: Failed building wheel for simsimd`
+
+The new version of albumentations (1.4.21) introduces a dependency on simsimd. Since the pre-built package of simsimd for Linux requires a glibc version greater than or equal to 2.28, this causes installation issues on some Linux distributions released before 2019. You can resolve this issue by using the following command:
+```
+pip install -U magic-pdf[full,old_linux] --extra-index-url https://wheels.myhloli.com
+```
+
+Reference: https://github.com/opendatalab/MinerU/issues/1004

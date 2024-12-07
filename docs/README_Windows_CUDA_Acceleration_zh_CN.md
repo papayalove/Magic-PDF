@@ -26,10 +26,11 @@ conda activate MinerU
 ## 4. 安装应用
 
 ```bash
-pip install -U magic-pdf[full] --extra-index-url https://wheels.myhloli.com -i https://pypi.tuna.tsinghua.edu.cn/simple
+pip install -U magic-pdf[full] --extra-index-url https://wheels.myhloli.com -i https://mirrors.aliyun.com/pypi/simple
 ```
 
-> ❗️下载完成后，务必通过以下命令确认magic-pdf的版本是否正确
+> [!IMPORTANT]
+> 下载完成后，务必通过以下命令确认magic-pdf的版本是否正确
 >
 > ```bash
 > magic-pdf --version
@@ -46,6 +47,7 @@ pip install -U magic-pdf[full] --extra-index-url https://wheels.myhloli.com -i h
 完成[5.下载模型](#5-下载模型)步骤后，脚本会自动生成用户目录下的magic-pdf.json文件，并自动配置默认模型路径。
 您可在【用户目录】下找到magic-pdf.json文件。
 
+> [!TIP]
 > windows用户目录为 "C:/Users/用户名"
 
 ## 7. 第一次运行
@@ -54,7 +56,7 @@ pip install -U magic-pdf[full] --extra-index-url https://wheels.myhloli.com -i h
 
 ```powershell
  wget https://github.com/opendatalab/MinerU/raw/master/demo/small_ocr.pdf -O small_ocr.pdf
- magic-pdf -p small_ocr.pdf
+ magic-pdf -p small_ocr.pdf -o ./output
 ```
 
 ## 8. 测试CUDA加速
@@ -67,7 +69,8 @@ pip install -U magic-pdf[full] --extra-index-url https://wheels.myhloli.com -i h
 pip install --force-reinstall torch==2.3.1 torchvision==0.18.1 --index-url https://download.pytorch.org/whl/cu118
 ```
 
-> ❗️务必在命令中指定以下版本
+> [!IMPORTANT]
+> 务必在命令中指定以下版本
 >
 > ```bash
 > torch==2.3.1 torchvision==0.18.1
@@ -86,10 +89,11 @@ pip install --force-reinstall torch==2.3.1 torchvision==0.18.1 --index-url https
 **3.运行以下命令测试cuda加速效果**
 
 ```bash
-magic-pdf -p small_ocr.pdf
+magic-pdf -p small_ocr.pdf -o ./output
 ```
 
-> 提示：CUDA加速是否生效可以根据log中输出的各个阶段的耗时来简单判断，通常情况下，`layout detection time` 和 `mfr time` 应提速10倍以上。
+> [!TIP]
+> CUDA加速是否生效可以根据log中输出的各个阶段的耗时来简单判断，通常情况下，`layout detection time` 和 `mfr time` 应提速10倍以上。
 
 ## 9. 为ocr开启cuda加速
 
@@ -102,7 +106,7 @@ pip install paddlepaddle-gpu==2.6.1
 **2.运行以下命令测试ocr加速效果**
 
 ```bash
-magic-pdf -p small_ocr.pdf
+magic-pdf -p small_ocr.pdf -o ./output
 ```
-
-> 提示：CUDA加速是否生效可以根据log中输出的各个阶段cost耗时来简单判断，通常情况下，`ocr time`应提速10倍以上。
+> [!TIP]
+> CUDA加速是否生效可以根据log中输出的各个阶段cost耗时来简单判断，通常情况下，`ocr time`应提速10倍以上。
