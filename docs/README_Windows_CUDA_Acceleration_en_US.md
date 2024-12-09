@@ -28,7 +28,8 @@ conda activate MinerU
 pip install -U magic-pdf[full] --extra-index-url https://wheels.myhloli.com
 ```
 
-> ❗️After installation, verify the version of `magic-pdf`:
+> [!IMPORTANT]
+> After installation, verify the version of `magic-pdf`:
 >
 > ```bash
 > magic-pdf --version
@@ -45,6 +46,7 @@ Refer to detailed instructions on [how to download model files](how_to_download_
 After completing the [5. Download Models](#5-download-models) step, the script will automatically generate a `magic-pdf.json` file in the user directory and configure the default model path.
 You can find the `magic-pdf.json` file in your 【user directory】 .
 
+> [!TIP]
 > The user directory for Windows is "C:/Users/username".
 
 ### 7. First Run
@@ -53,7 +55,7 @@ Download a sample file from the repository and test it.
 
 ```powershell
   wget https://github.com/opendatalab/MinerU/raw/master/demo/small_ocr.pdf -O small_ocr.pdf
-  magic-pdf -p small_ocr.pdf
+  magic-pdf -p small_ocr.pdf -o ./output
 ```
 
 ### 8. Test CUDA Acceleration
@@ -63,16 +65,8 @@ If your graphics card has at least 8GB of VRAM, follow these steps to test CUDA-
 1. **Overwrite the installation of torch and torchvision** supporting CUDA.
 
    ```
-   pip install --force-reinstall torch==2.3.1 torchvision==0.18.1 --index-url https://download.pytorch.org/whl/cu118
+   pip install --force-reinstall torch torchvision --index-url https://download.pytorch.org/whl/cu118
    ```
-
-   > ❗️Ensure the following versions are specified in the command:
-   >
-   > ```
-   > torch==2.3.1 torchvision==0.18.1
-   > ```
-   >
-   > These are the highest versions we support. Installing higher versions without specifying them will cause the program to fail.
 
 2. **Modify the value of `"device-mode"`** in the `magic-pdf.json` configuration file located in your user directory.
 
@@ -82,10 +76,11 @@ If your graphics card has at least 8GB of VRAM, follow these steps to test CUDA-
    }
    ```
 
+
 3. **Run the following command to test CUDA acceleration**:
 
    ```
-   magic-pdf -p small_ocr.pdf
+   magic-pdf -p small_ocr.pdf -o ./output
    ```
 
 ### 9. Enable CUDA Acceleration for OCR
@@ -96,5 +91,5 @@ If your graphics card has at least 8GB of VRAM, follow these steps to test CUDA-
    ```
 2. **Run the following command to test OCR acceleration**:
    ```
-   magic-pdf -p small_ocr.pdf
+   magic-pdf -p small_ocr.pdf -o ./output
    ```
