@@ -26,6 +26,65 @@ Welcome to the MinerU Documentation
    </p>
 
 
+Project Introduction
+--------------------
+
+MinerU is a tool that converts PDFs into machine-readable formats (e.g.,
+markdown, JSON), allowing for easy extraction into any format. MinerU
+was born during the pre-training process of
+`InternLM <https://github.com/InternLM/InternLM>`__. We focus on solving
+symbol conversion issues in scientific literature and hope to contribute
+to technological development in the era of large models. Compared to
+well-known commercial products, MinerU is still young. If you encounter
+any issues or if the results are not as expected, please submit an issue
+on `issue <https://github.com/opendatalab/MinerU/issues>`__ and **attach
+the relevant PDF**.
+
+.. video:: https://github.com/user-attachments/assets/4bea02c9-6d54-4cd6-97ed-dff14340982c
+
+
+Key Features
+------------
+
+-  Remove headers, footers, footnotes, page numbers, etc., to ensure
+   semantic coherence.
+-  Output text in human-readable order, suitable for single-column,
+   multi-column, and complex layouts.
+-  Preserve the structure of the original document, including headings,
+   paragraphs, lists, etc.
+-  Extract images, image descriptions, tables, table titles, and
+   footnotes.
+-  Automatically recognize and convert formulas in the document to LaTeX
+   format.
+-  Automatically recognize and convert tables in the document to LaTeX
+   or HTML format.
+-  Automatically detect scanned PDFs and garbled PDFs and enable OCR
+   functionality.
+-  OCR supports detection and recognition of 84 languages.
+-  Supports multiple output formats, such as multimodal and NLP
+   Markdown, JSON sorted by reading order, and rich intermediate
+   formats.
+-  Supports various visualization results, including layout
+   visualization and span visualization, for efficient confirmation of
+   output quality.
+-  Supports both CPU and GPU environments.
+-  Compatible with Windows, Linux, and Mac platforms.
+
+
+.. tip::
+
+   Get started with MinerU by trying the `online demo <https://www.modelscope.cn/studios/OpenDataLab/MinerU>`_ or :doc:`installing it locally <user_guide/install/install>`.
+
+
+User Guide
+-------------
+.. toctree::
+   :maxdepth: 2
+   :caption: User Guide
+
+   user_guide
+
+
 API Reference
 -------------
 
@@ -34,5 +93,19 @@ method, this part of the documentation is for you.
 
 .. toctree::
    :maxdepth: 2
+   :caption: API
 
    api
+
+
+Additional Notes
+------------------
+.. toctree::
+   :maxdepth: 1
+   :caption: Additional Notes
+
+   additional_notes/known_issues
+   additional_notes/faq
+   additional_notes/glossary
+
+

@@ -2,21 +2,20 @@ import re
 
 from loguru import logger
 
+from magic_pdf.config.make_content_config import DropMode, MakeMode
+from magic_pdf.config.ocr_content_type import BlockType, ContentType
 from magic_pdf.libs.commons import join_path
 from magic_pdf.libs.language import detect_lang
-from magic_pdf.libs.MakeContentConfig import DropMode, MakeMode
 from magic_pdf.libs.markdown_utils import ocr_escape_special_markdown_char
-from magic_pdf.libs.ocr_content_type import BlockType, ContentType
 from magic_pdf.para.para_split_v3 import ListLineTag
 
 
 def __is_hyphen_at_line_end(line):
-    """
-    Check if a line ends with one or more letters followed by a hyphen.
-    
+    """Check if a line ends with one or more letters followed by a hyphen.
+
     Args:
     line (str): The line of text to check.
-    
+
     Returns:
     bool: True if the line ends with one or more letters followed by a hyphen, False otherwise.
     """
@@ -31,6 +30,13 @@ def ocr_mk_mm_markdown_with_para_and_pagination(pdf_info_dict: list,
     for page_info in pdf_info_dict:
         paras_of_layout = page_info.get('para_blocks')
         if not paras_of_layout:
+            markdown_with_para_and_pagination.append({
+                'page_no':
+                    page_no,
+                'md_content':
+                    '',
+            })
+            page_no += 1
             continue
         page_markdown = ocr_mk_markdown_with_para_core_v2(
             paras_of_layout, 'mm', img_buket_path)
@@ -67,7 +73,8 @@ def ocr_mk_markdown_with_para_core_v2(paras_of_layout,
                         for line in block['lines']:
                             for span in line['spans']:
                                 if span['type'] == ContentType.Image:
-                                    para_text += f"\n![]({join_path(img_buket_path, span['image_path'])})  \n"
+                                    if span.get('image_path', ''):
+                                        para_text += f"\n![]({join_path(img_buket_path, span['image_path'])})  \n"
                 for block in para_block['blocks']:  # 2nd.拼image_caption
                     if block['type'] == BlockType.ImageCaption:
                         para_text += merge_para_with_text(block) + '  \n'
@@ -91,7 +98,7 @@ def ocr_mk_markdown_with_para_core_v2(paras_of_layout,
                                         para_text += f"\n\n$\n {span['latex']}\n$\n\n"
                                     elif span.get('html', ''):
                                         para_text += f"\n\n{span['html']}\n\n"
-                                    else:
+                                    elif span.get('image_path', ''):
                                         para_text += f"\n![]({join_path(img_buket_path, span['image_path'])})  \n"
                 for block in para_block['blocks']:  # 3rd.拼table_footnote
                     if block['type'] == BlockType.TableFootnote:
@@ -119,43 +126,54 @@ def detect_language(text):
 
 
 def merge_para_with_text(para_block):
+    block_text = ''
+    for line in para_block['lines']:
+        for span in line['spans']:
+            if span['type'] in [ContentType.Text]:
+                block_text += span['content']
+    block_lang = detect_lang(block_text)
+
     para_text = ''
     for i, line in enumerate(para_block['lines']):
 
         if i >= 1 and line.get(ListLineTag.IS_LIST_START_LINE, False):
             para_text += '  \n'
 
-        line_text = ''
-        line_lang = ''
-        for span in line['spans']:
-            span_type = span['type']
-            if span_type == ContentType.Text:
-                line_text += span['content'].strip()
-        if line_text != '':
-            line_lang = detect_lang(line_text)
-        for span in line['spans']:
+        for j, span in enumerate(line['spans']):
 
             span_type = span['type']
             content = ''
             if span_type == ContentType.Text:
                 content = ocr_escape_special_markdown_char(span['content'])
             elif span_type == ContentType.InlineEquation:
-                content = f" ${span['content']}$ "
+                content = f"${span['content']}$"
             elif span_type == ContentType.InterlineEquation:
                 content = f"\n$$\n{span['content']}\n$$\n"
 
-            if content != '':
+            content = content.strip()
+
+            if content:
                 langs = ['zh', 'ja', 'ko']
-                if line_lang in langs:  # 遇到一些一个字一个span的文档，这种单字语言判断不准，需要用整行文本判断
-                    para_text += content  # 中文/日语/韩文语境下，content间不需要空格分隔
-                elif line_lang == 'en':
-                    # 如果是前一行带有-连字符，那么末尾不应该加空格
-                    if __is_hyphen_at_line_end(content):
-                        para_text += content[:-1]
+                # logger.info(f'block_lang: {block_lang}, content: {content}')
+                if block_lang in langs: # 中文/日语/韩文语境下，换行不需要空格分隔,但是如果是行内公式结尾，还是要加空格
+                    if j == len(line['spans']) - 1 and span_type not in [ContentType.InlineEquation]:
+                        para_text += content
                     else:
-                        para_text += content + ' '
+                        para_text += f'{content} '
                 else:
-                    para_text += content + ' '  # 西方文本语境下 content间需要空格分隔
+                    if span_type in [ContentType.Text, ContentType.InlineEquation]:
+                        # 如果span是line的最后一个且末尾带有-连字符，那么末尾不应该加空格,同时应该把-删除
+                        if j == len(line['spans'])-1 and span_type == ContentType.Text and __is_hyphen_at_line_end(content):
+                            para_text += content[:-1]
+                        else:  # 西方文本语境下 content间需要空格分隔
+                            para_text += f'{content} '
+                    elif span_type == ContentType.InterlineEquation:
+                        para_text += content
+            else:
+                continue
+    # 连写字符拆分
+    # para_text = __replace_ligatures(para_text)
+
     return para_text
 
 
@@ -180,25 +198,34 @@ def para_to_standard_format_v2(para_block, img_buket_path, page_idx, drop_reason
             'text_format': 'latex',
         }
     elif para_type == BlockType.Image:
-        para_content = {'type': 'image', 'img_caption': [], 'img_footnote': []}
+        para_content = {'type': 'image', 'img_path': '', 'img_caption': [], 'img_footnote': []}
         for block in para_block['blocks']:
             if block['type'] == BlockType.ImageBody:
-                para_content['img_path'] = join_path(
-                    img_buket_path,
-                    block['lines'][0]['spans'][0]['image_path'])
+                for line in block['lines']:
+                    for span in line['spans']:
+                        if span['type'] == ContentType.Image:
+                            if span.get('image_path', ''):
+                                para_content['img_path'] = join_path(img_buket_path, span['image_path'])
             if block['type'] == BlockType.ImageCaption:
                 para_content['img_caption'].append(merge_para_with_text(block))
             if block['type'] == BlockType.ImageFootnote:
                 para_content['img_footnote'].append(merge_para_with_text(block))
     elif para_type == BlockType.Table:
-        para_content = {'type': 'table', 'table_caption': [], 'table_footnote': []}
+        para_content = {'type': 'table', 'img_path': '', 'table_caption': [], 'table_footnote': []}
         for block in para_block['blocks']:
             if block['type'] == BlockType.TableBody:
-                if block["lines"][0]["spans"][0].get('latex', ''):
-                    para_content['table_body'] = f"\n\n$\n {block['lines'][0]['spans'][0]['latex']}\n$\n\n"
-                elif block["lines"][0]["spans"][0].get('html', ''):
-                    para_content['table_body'] = f"\n\n{block['lines'][0]['spans'][0]['html']}\n\n"
-                para_content['img_path'] = join_path(img_buket_path, block["lines"][0]["spans"][0]['image_path'])
+                for line in block['lines']:
+                    for span in line['spans']:
+                        if span['type'] == ContentType.Table:
+
+                            if span.get('latex', ''):
+                                para_content['table_body'] = f"\n\n$\n {span['latex']}\n$\n\n"
+                            elif span.get('html', ''):
+                                para_content['table_body'] = f"\n\n{span['html']}\n\n"
+
+                            if span.get('image_path', ''):
+                                para_content['img_path'] = join_path(img_buket_path, span['image_path'])
+
             if block['type'] == BlockType.TableCaption:
                 para_content['table_caption'].append(merge_para_with_text(block))
             if block['type'] == BlockType.TableFootnote:

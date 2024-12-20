@@ -1,7 +1,8 @@
-from magic_pdf.data.dataset import PymuDocDataset
-from magic_pdf.libs.commons import fitz  # PyMuPDF
-from magic_pdf.libs.Constants import CROSS_PAGE
-from magic_pdf.libs.ocr_content_type import BlockType, CategoryId, ContentType
+import fitz
+from magic_pdf.config.constants import CROSS_PAGE
+from magic_pdf.config.ocr_content_type import (BlockType, CategoryId,
+                                               ContentType)
+from magic_pdf.data.dataset import Dataset
 from magic_pdf.model.magic_model import MagicModel
 
 
@@ -194,7 +195,7 @@ def draw_layout_bbox(pdf_info, pdf_bytes, out_path, filename):
         )
 
     # Save the PDF
-    pdf_docs.save(f'{out_path}/{filename}_layout.pdf')
+    pdf_docs.save(f'{out_path}/{filename}')
 
 
 def draw_span_bbox(pdf_info, pdf_bytes, out_path, filename):
@@ -249,7 +250,8 @@ def draw_span_bbox(pdf_info, pdf_bytes, out_path, filename):
                         page_dropped_list.append(span['bbox'])
         dropped_list.append(page_dropped_list)
         # 构造其余useful_list
-        for block in page['para_blocks']:
+        # for block in page['para_blocks']:  # span直接用分段合并前的结果就可以
+        for block in page['preproc_blocks']:
             if block['type'] in [
                 BlockType.Text,
                 BlockType.Title,
@@ -281,18 +283,17 @@ def draw_span_bbox(pdf_info, pdf_bytes, out_path, filename):
         draw_bbox_without_number(i, dropped_list, page, [158, 158, 158], False)
 
     # Save the PDF
-    pdf_docs.save(f'{out_path}/{filename}_spans.pdf')
+    pdf_docs.save(f'{out_path}/{filename}')
 
 
-def draw_model_bbox(model_list: list, pdf_bytes, out_path, filename):
+def draw_model_bbox(model_list, dataset: Dataset, out_path, filename):
     dropped_bbox_list = []
     tables_body_list, tables_caption_list, tables_footnote_list = [], [], []
     imgs_body_list, imgs_caption_list, imgs_footnote_list = [], [], []
     titles_list = []
     texts_list = []
     interequations_list = []
-    pdf_docs = fitz.open('pdf', pdf_bytes)
-    magic_model = MagicModel(model_list, PymuDocDataset(pdf_bytes))
+    magic_model = MagicModel(model_list, dataset)
     for i in range(len(model_list)):
         page_dropped_list = []
         tables_body, tables_caption, tables_footnote = [], [], []
@@ -336,7 +337,8 @@ def draw_model_bbox(model_list: list, pdf_bytes, out_path, filename):
         dropped_bbox_list.append(page_dropped_list)
         imgs_footnote_list.append(imgs_footnote)
 
-    for i, page in enumerate(pdf_docs):
+    for i in range(len(dataset)):
+        page = dataset.get_page(i)
         draw_bbox_with_number(
             i, dropped_bbox_list, page, [158, 158, 158], True
         )  # color !
@@ -351,7 +353,7 @@ def draw_model_bbox(model_list: list, pdf_bytes, out_path, filename):
         draw_bbox_with_number(i, interequations_list, page, [0, 255, 0], True)
 
     # Save the PDF
-    pdf_docs.save(f'{out_path}/{filename}_model.pdf')
+    dataset.dump_to_file(f'{out_path}/{filename}')
 
 
 def draw_line_sort_bbox(pdf_info, pdf_bytes, out_path, filename):
@@ -368,10 +370,16 @@ def draw_line_sort_bbox(pdf_info, pdf_bytes, out_path, filename):
             if block['type'] in [BlockType.Image, BlockType.Table]:
                 for sub_block in block['blocks']:
                     if sub_block['type'] in [BlockType.ImageBody, BlockType.TableBody]:
-                        for line in sub_block['virtual_lines']:
-                            bbox = line['bbox']
-                            index = line['index']
-                            page_line_list.append({'index': index, 'bbox': bbox})
+                        if len(sub_block['virtual_lines']) > 0 and sub_block['virtual_lines'][0].get('index', None) is not None:
+                            for line in sub_block['virtual_lines']:
+                                bbox = line['bbox']
+                                index = line['index']
+                                page_line_list.append({'index': index, 'bbox': bbox})
+                        else:
+                            for line in sub_block['lines']:
+                                bbox = line['bbox']
+                                index = line['index']
+                                page_line_list.append({'index': index, 'bbox': bbox})
                     elif sub_block['type'] in [BlockType.ImageCaption, BlockType.TableCaption, BlockType.ImageFootnote, BlockType.TableFootnote]:
                         for line in sub_block['lines']:
                             bbox = line['bbox']
@@ -383,7 +391,7 @@ def draw_line_sort_bbox(pdf_info, pdf_bytes, out_path, filename):
     for i, page in enumerate(pdf_docs):
         draw_bbox_with_number(i, layout_bbox_list, page, [255, 0, 0], False)
 
-    pdf_docs.save(f'{out_path}/{filename}_line_sort.pdf')
+    pdf_docs.save(f'{out_path}/{filename}')
 
 
 def draw_layout_sort_bbox(pdf_info, pdf_bytes, out_path, filename):
