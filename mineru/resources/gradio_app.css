@@ -1,0 +1,405 @@
+.gradio-container {
+    --mineru-accent: #f97316;
+    --mineru-preview-content-height: 775px;
+    --mineru-pdf-page-height: 720px;
+    --mineru-markdown-text-content-height: var(--mineru-preview-content-height);
+    --mineru-panel: rgba(255, 255, 255, 0.62);
+    --mineru-panel-border: rgba(17, 24, 39, 0.10);
+    --mineru-status-panel-bg: rgba(255, 255, 255, 0.78);
+    --mineru-status-latest-border: rgba(17, 24, 39, 0.13);
+    --mineru-status-latest-text: #374151;
+}
+@media (prefers-color-scheme: light) {
+    .gradio-container {
+        --mineru-panel: rgba(255, 255, 255, 0.62);
+        --mineru-panel-border: rgba(17, 24, 39, 0.10);
+        --mineru-status-panel-bg: rgba(255, 255, 255, 0.78);
+        --mineru-status-latest-border: rgba(17, 24, 39, 0.13);
+        --mineru-status-latest-text: #374151;
+    }
+}
+body.dark .gradio-container {
+    --mineru-panel: rgba(255, 255, 255, 0.045);
+    --mineru-panel-border: rgba(255, 255, 255, 0.1);
+    --mineru-status-panel-bg: rgba(0, 0, 0, 0.18);
+    --mineru-status-latest-border: var(--mineru-panel-border);
+    --mineru-status-latest-text: var(--body-text-color-subdued);
+}
+.mineru-shell {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+.mineru-workspace-row {
+    align-items: stretch;
+}
+.mineru-control-column,
+.mineru-preview-pane,
+.mineru-markdown-pane {
+    border: 1px solid var(--mineru-panel-border);
+    border-radius: 8px;
+    background: var(--mineru-panel);
+    padding: 12px;
+}
+.mineru-control-column {
+    position: sticky !important;
+    top: 12px;
+    align-self: flex-start;
+}
+/* 有示例时控制列拉伸到与预览面板等高，由示例块吸收底部空白。 */
+.mineru-control-column:has(#mineru-kit-examples) {
+    align-self: stretch !important;
+}
+/* PDF 切换时 iframe 会短暂卸载；保持预览列内边距，避免 flex 重新分配左栏宽度。 */
+.mineru-kit-workspace:has(.mineru-page-values[data-range-visible="true"]) .mineru-kit-preview {
+    padding: 0 !important;
+    gap: 0 !important;
+}
+/* HF Space 不执行 Gradio 的自定义 CSS 前缀改写，以下规则必须独立压过
+   Gradio 自带 scoped 样式（div.svelte-*、.head.svelte-*、.prose 等）。 */
+.mineru-tier-slider .head,
+.mineru-tier-slider .min_value,
+.mineru-tier-slider .max_value {
+    display: none !important;
+}
+/* 两个原生 range 共用同一条轨道；仅滑块接收指针，保留原生键盘交互。 */
+.mineru-kit-page-range {
+    display: none !important; position: relative; padding: 4px 12px 15px !important; overflow: visible !important;
+    border: 1px solid var(--mineru-panel-border); border-radius: 8px;
+    gap: 0 !important; flex: 0 0 auto !important;
+}
+/* 用明确的选页状态控制可见性，保留原生滑块的交互状态。 */
+.mineru-kit-page-range:has([data-range-visible="true"]) { display: flex !important; }
+.mineru-page-summary, .mineru-page-summary .html-container { padding: 0 !important; }
+.mineru-page-values, .mineru-page-axis { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+.mineru-page-values { font-size: 12px; justify-content: center; }
+.mineru-page-selection { font-weight: 600; color: var(--mineru-accent); }
+.mineru-page-axis { position: absolute; bottom: 0; left: 0; right: 0; font-size: 12px; opacity: .7; }
+.mineru-page-summary { position: static !important; }
+.mineru-kit-page-range .mineru-page-axis { bottom: 4px; left: 12px; right: 12px; }
+.mineru-page-sliders { position: relative !important; height: 32px; min-height: 32px !important; gap: 0 !important; }
+.mineru-page-sliders::before {
+    content: ""; position: absolute; left: 8px; right: 8px; top: 14px; height: 4px; border-radius: 4px;
+    background: linear-gradient(to right,
+        var(--border-color-primary, #ddd) var(--range-start, 0%),
+        var(--mineru-accent) var(--range-start, 0%), var(--mineru-accent) var(--range-end, 100%),
+        var(--border-color-primary, #ddd) var(--range-end, 100%));
+}
+.mineru-page-sliders > .form { position: static !important; }
+.mineru-page-handle-a, .mineru-page-handle-b {
+    position: absolute !important; inset: 0; width: 100% !important; min-width: 0 !important;
+    padding: 0 !important; border: 0 !important; background: transparent !important; pointer-events: none;
+}
+.mineru-page-handle-a .head, .mineru-page-handle-b .head,
+.mineru-page-sliders .min_value, .mineru-page-sliders .max_value { display: none !important; }
+.mineru-page-sliders input[type="range"] {
+    position: absolute; inset: 0; width: 100%; height: 32px; padding: 0; margin: 0;
+    pointer-events: none; background: transparent !important;
+}
+.mineru-page-sliders input[type="range"]::-webkit-slider-runnable-track { background: transparent !important; }
+.mineru-page-sliders input[type="range"]::-moz-range-track,
+.mineru-page-sliders input[type="range"]::-moz-range-progress { background: transparent !important; }
+.mineru-page-sliders input[type="range"]::-webkit-slider-thumb { pointer-events: auto; }
+.mineru-page-sliders input[type="range"]::-moz-range-thumb { pointer-events: auto; }
+.mineru-page-sliders input[type="range"]:disabled::-webkit-slider-thumb { pointer-events: none; }
+.mineru-page-sliders input[type="range"]:disabled::-moz-range-thumb { pointer-events: none; }
+.mineru-page-handle-a { z-index: 2; }
+.mineru-page-handle-b { z-index: 3; }
+.mineru-page-handle-a:focus-within, .mineru-page-handle-b:focus-within { z-index: 4; }
+.mineru-page-notice { font-size: 13px; color: var(--body-text-color-subdued); }
+.mineru-upload-file label[data-testid="block-label"] {
+    align-items: flex-start !important;
+    line-height: 1.35 !important;
+    white-space: pre-line !important;
+}
+.mineru-upload-file label[data-testid="block-label"] > span {
+    margin-top: 2px;
+}
+/* 示例块：吸收控制列剩余高度，与状态卡一致的卡片外观；文件多时内部滚动。 */
+#mineru-kit-examples {
+    width: 100% !important;
+    max-width: none !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+    border: 1px solid var(--mineru-panel-border) !important;
+    border-radius: 8px !important;
+    background: var(--mineru-status-panel-bg) !important;
+    padding: 12px !important;
+}
+#mineru-kit-examples > .label {
+    flex: none;
+    margin: 0 0 8px !important;
+    font-size: 13px;
+    font-weight: 700;
+}
+#mineru-kit-examples .gallery {
+    flex: 1 1 auto;
+    min-height: 0;
+    align-content: flex-start;
+    overflow-y: auto;
+}
+#mineru-kit-examples .gallery-item {
+    font-size: 13px;
+    transition: border-color .15s ease, color .15s ease;
+}
+#mineru-kit-examples .gallery-item:hover {
+    border-color: var(--mineru-accent) !important;
+    color: var(--mineru-accent) !important;
+}
+.mineru-actions {
+    flex-wrap: nowrap !important;
+    gap: 8px !important;
+}
+.mineru-actions > * {
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+}
+.mineru-actions button {
+    min-width: 0 !important;
+    width: 100% !important;
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+}
+.mineru-result-tabs .tab-nav {
+    border-bottom-color: var(--mineru-panel-border);
+}
+.mineru-preview-pane,
+.mineru-markdown-pane {
+    min-width: 340px;
+}
+.mineru-preview-pane > .block {
+    /* +110px 与结果栏 min-height 对齐，扣除本栏 padding+border 共 26px。 */
+    height: calc(var(--mineru-preview-content-height) + 110px - 26px) !important;
+    max-height: calc(var(--mineru-preview-content-height) + 110px - 26px) !important;
+    overflow: hidden !important;
+    resize: none !important;
+}
+.mineru-preview-pane > .block,
+.mineru-markdown-output {
+    min-height: var(--mineru-preview-content-height);
+}
+.mineru-preview-pane > .block.mineru-office-preview-html {
+    height: calc(var(--mineru-preview-content-height) + 110px - 26px) !important;
+    max-height: calc(var(--mineru-preview-content-height) + 110px - 26px) !important;
+    min-height: var(--mineru-preview-content-height) !important;
+    overflow: hidden !important;
+    resize: none !important;
+}
+.mineru-office-preview-html .html-container {
+    height: 100% !important;
+    max-height: 100% !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+}
+.mineru-office-preview-html .prose {
+    height: 100% !important;
+    max-width: none !important;
+}
+
+.mineru-result-file {
+    height: auto !important;
+    min-height: 44px !important;
+    margin-top: 2px;
+}
+.mineru-result-file .empty {
+    display: none !important;
+}
+.block.mineru-status-panel {
+    width: 100% !important;
+    max-width: none !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+}
+.block.mineru-status-panel .html-container {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+.block.mineru-status-panel .prose,
+.block.mineru-status-panel .status-steps-panel {
+    width: 100% !important;
+    max-width: none !important;
+}
+.mineru-markdown-tabs .tab-nav {
+    border-bottom-color: var(--mineru-panel-border);
+}
+.mineru-markdown-output .html-container,
+.mineru-markdown-output .prose {
+    padding: 0 !important;
+    max-width: none !important;
+}
+.mineru-rendered-html-frame {
+    display: block;
+    width: 100%;
+    height: var(--mineru-preview-content-height);
+    border: 0;
+    background: white;
+}
+.status-steps-panel {
+    border: 1px solid var(--mineru-panel-border);
+    border-radius: 8px;
+    padding: 12px;
+    background: var(--mineru-status-panel-bg);
+}
+.status-panel-title {
+    margin-bottom: 10px;
+    font-size: 13px;
+    font-weight: 700;
+}
+.status-steps-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+.status-step {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    min-width: 0;
+    color: var(--body-text-color-subdued) !important;
+    font-size: 12px;
+}
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: var(--border-color-primary);
+    flex: none;
+}
+.status-step.is-done .status-dot {
+    background: #22c55e;
+}
+.status-step.is-active {
+    color: var(--body-text-color);
+    font-weight: 700;
+}
+.status-step.is-active .status-dot {
+    background: var(--mineru-accent);
+    box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.22);
+}
+.status-step.is-error .status-dot {
+    background: #ef4444;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
+}
+.status-latest {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--mineru-status-latest-border);
+    color: var(--mineru-status-latest-text) !important;
+    font-family: var(--font-mono) !important;
+    font-size: 12px;
+    line-height: 1.45 !important;
+    word-break: break-word;
+}
+.office-preview-shell {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    height: 100%;
+    min-height: var(--mineru-preview-content-height);
+}
+.office-preview-notice {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 24px;
+    border: 1px solid rgba(249, 115, 22, 0.35);
+    border-radius: 8px;
+    padding: 10px 12px;
+    background: rgba(249, 115, 22, 0.08);
+}
+.office-preview-notice.is-dismissed {
+    display: none !important;
+}
+.office-preview-copy {
+    min-width: 0;
+}
+.office-preview-copy strong,
+.office-preview-copy > span {
+    display: block;
+}
+.office-preview-copy > span {
+    margin-top: 4px;
+    color: var(--body-text-color-subdued);
+    font-size: 12px;
+}
+.office-preview-actions {
+    display: grid;
+    grid-template-columns: 100px;
+    grid-auto-rows: 28px;
+    align-items: stretch;
+    justify-items: stretch;
+    justify-content: end;
+    flex: none;
+    gap: 6px;
+}
+.office-preview-actions button {
+    display: inline-flex;
+    align-items: center !important;
+    justify-content: center !important;
+    min-height: 0 !important;
+    box-sizing: border-box !important;
+    border: 1px solid rgba(249, 115, 22, 0.36);
+    border-radius: 8px;
+    padding: 0 6px !important;
+    background: rgba(249, 115, 22, 0.10);
+    color: var(--body-text-color);
+    font-size: 12px !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+    cursor: pointer;
+}
+.office-preview-actions button > span {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+}
+.office-preview-actions button:hover {
+    background: rgba(249, 115, 22, 0.18);
+}
+.office-preview-source-link {
+    margin-top: 6px;
+    min-width: 0;
+    color: var(--body-text-color-subdued);
+    font-size: 12px;
+    line-height: 1.45;
+    word-break: break-all;
+}
+.office-preview-source-link a {
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+.office-preview-frame {
+    flex: 1 1 auto;
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    border: 1px solid var(--mineru-panel-border);
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.18);
+}
+@media (max-width: 900px) {
+    .mineru-control-column {
+        position: static;
+    }
+    .mineru-preview-pane,
+    .mineru-markdown-pane {
+        min-width: 100%;
+    }
+    /* 纵向堆叠时保持自然高度，避免示例块拉伸整页。 */
+    #mineru-kit-examples {
+        flex: 0 0 auto !important;
+    }
+    #mineru-kit-examples .gallery {
+        max-height: 240px;
+    }
+}

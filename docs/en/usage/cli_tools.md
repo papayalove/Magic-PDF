@@ -1,0 +1,110 @@
+# Command Line Tools
+
+MinerU exposes two primary command trees. `mineru` is the document-library client for interactive and agent workflows; `mineru-kit` contains stateless parsing, service, model, router, and WebUI tools.
+
+## Document-library CLI
+
+Use `mineru --help` to list all document-library commands. The most common parsing flow is:
+
+```bash
+mineru parse report.pdf --pages all -o report.md
+```
+
+When `-o/--output` is omitted, rendered content is written to stdout. PDF input defaults to the first 10 pages; pass `--pages all` for the complete document. The document library manages ingestion, caching, background parsing, reading, search, and cleanup.
+
+Manage the local document-library service with:
+
+```bash
+mineru server start
+mineru server status
+mineru server stop
+```
+
+Run `mineru <command> --help` for the authoritative options of each command.
+
+## Parsing, reading, exporting, and waiting
+
+`mineru parse` combines four behaviors that are easy to conflate; keep them separate when scripting:
+
+| Dimension | Default | What to know |
+| --- | --- | --- |
+| Pages requested | First 10 PDF pages; `--pages all` requests every page | Requesting all pages is not the same as receiving all text on stdout in one response |
+| Stdout reading window | 30,000-character soft limit; `--limit` changes it, `--after` continues from a content cursor | When more content exists, a `<!-- Next: mineru parse ... -->` marker with the next command is appended |
+| File export | `-o <path>` writes the complete rendered content of the **requested pages** | The export path ignores `--limit`/`--after`; it is not stdout redirected to a file. Exporting the whole document still needs `--pages all` |
+| Client wait | `--wait` waits up to 60 seconds; `--no-wait` returns immediately | A wait timeout exits with code 1 but does not fail or cancel the parse |
+
+A wait timeout is a client-side deadline, not a task failure: the parse keeps running in the document library. With `--json`, the response carries error code `parse_wait_timeout` and the tip to re-run the same command to continue waiting; in text mode the summary points to `mineru show parse <id>` for status. On slower devices or a first run (including model download), pass a larger window explicitly:
+
+```bash
+# Stateless conversion of the whole document
+mineru-kit parse document.pdf -o document.md --tier standard
+
+# Library parse with a complete export and an explicit 10-minute client wait
+mineru parse document.pdf --pages all -o document.md --wait 600
+```
+
+When automating, keep three usage patterns apart: agent reading cares about bounded stdout, locators, and continuation; file conversion cares about complete artifacts; async tasks care about job status and the client wait window. Do not merge them into a single "command succeeded/failed" check.
+
+## Stateless and service tools
+
+Use `mineru-kit --help` to list the available tools.
+
+### Batch parsing
+
+```bash
+mineru-kit parse report.pdf -o report.md --tier standard
+mineru-kit parse ./documents -o ./output --format zip
+```
+
+`mineru-kit parse` does not use the document-library database or cache. It supports local parsing and explicit V1 remote parsing; see `mineru-kit parse --help` for tier, page-range, and output options.
+
+### V1 API server
+
+```bash
+mineru-kit api-server --host 127.0.0.1 --port 8000 --tier standard
+```
+
+Open `http://127.0.0.1:8000/docs` for the generated OpenAPI documentation. The supported API is `/v1/*`; the removed legacy `/file_parse` and `/tasks` routes are not available.
+
+### Gradio WebUI
+
+```bash
+mineru-kit webui --server-name 127.0.0.1 --server-port 7860
+```
+
+Without `--api-url`, Gradio manages a loopback `mineru-kit api-server`. With `--api-url`, it connects only to that V1 service. `mineru-webui` is retained as a command-name alias and accepts the same modern options; it does not restore legacy Gradio options or HTTP routes.
+
+### Router and VLM server
+
+```bash
+mineru-kit router --host 127.0.0.1 --port 8002 --local-gpus auto
+mineru-kit vlm-server --engine auto --port 30000
+```
+
+`mineru-router` remains a command-name alias for `mineru-kit router`. Router exposes only the V1 API and accepts only its documented worker options.
+
+## Environment variables
+
+- `MINERU_HOME`: root for MinerU configuration, cache, and document-library state.
+- `MINERU_CONFIG`: explicit `config.yaml` path.
+- `MINERU_MODEL_SOURCE`: model source, such as `huggingface`, `modelscope`, or `local`.
+- `MINERU_API_URL` / `MINERU_API_KEY`: default V1 API URL and bearer key for API clients.
+- `MINERU_LOCAL_API_STARTUP_TIMEOUT_SECONDS`: startup timeout for the Gradio-managed local V1 server; default `300` seconds.
+- `MINERU_API_ENABLE_FASTAPI_DOCS`: enable `/docs`, `/openapi.json`, and `/redoc` on the V1 API server; default `true`.
+- `MINERU_PDF_RENDER_TIMEOUT` / `MINERU_PDF_RENDER_THREADS`: PDF rendering timeout and worker count.
+- `MINERU_PROCESSING_WINDOW_SIZE`: processing window size used for large documents. Flash native text parsing renders only pages with visual blocks, preserving this window boundary, rendering timeout, and worker settings. A 32 MiB pixel budget can split batches further. OCR and other tiers still render entire windows.
+- `MINERU_MALLOC_TRIM`: disabled by default; only `1/true/yes/on` enable it, ignoring case and surrounding whitespace. On Linux, when available, it attempts to return the current process's free glibc heap pages after inference windows and PDF document cleanup. Flash native parsing only attempts trimming at document completion. Unsupported platforms or missing symbols are a no-op. It does not release live objects, GPU memory, or render-worker memory. See [memory benchmarking](./pdf_memory.md).
+- `MINERU_INTRA_OP_NUM_THREADS` / `MINERU_INTER_OP_NUM_THREADS`: Per-session ONNX intra-op / inter-op thread counts, defaulting to `4` / `1`, including CPU fallback from table CUDA sessions. Explicit positive arguments or session thread settings take precedence over environment variables; missing, non-integer, or non-positive environment values use the defaults. These settings do not cap the process's total thread count or automatically detect container CPU quotas.
+
+Prefer each command's `--help` output and [model source documentation](./model_source.md) for current defaults.
+
+## PDF page selection
+
+Use `--pages "1-5,8,r3-r1"`: page numbers start at 1, ranges include both endpoints,
+and `r1` means the last page. Use `all` for every page. Results are sorted and deduplicated;
+partially out-of-bounds ranges select their valid intersection. Reversed or empty selections
+fail with `page_range_invalid`. Without `--pages`, `mineru parse` starts with the first 10 pages;
+`mineru-kit parse`, Python and Gradio select all pages. New requests use the current syntax. Historical positive result ranges using ASCII `~`
+remain readable without rebuilding Doclib caches; result responses and new cache entries use `-`.
+Fullwidth `～` and negative page-number notation are not supported.
+See [page-range syntax and historical result compatibility](tiers.md).

@@ -1,25 +1,35 @@
-import os
+# Copyright (c) Opendatalab. All rights reserved.
+"""使用 Python SDK 解析示例 PDF；在项目根目录运行 python -m demo.demo。"""
 
-from loguru import logger
-from magic_pdf.pipe.UNIPipe import UNIPipe
-from magic_pdf.rw.DiskReaderWriter import DiskReaderWriter
+from pathlib import Path
+
+from mineru.parser import parse
+from mineru.parser.writer import FileBasedDataWriter
 
 
-try:
-    current_script_dir = os.path.dirname(os.path.abspath(__file__))
-    demo_name = "demo1"
-    pdf_path = os.path.join(current_script_dir, f"{demo_name}.pdf")
-    pdf_bytes = open(pdf_path, "rb").read()
-    jso_useful_key = {"_pdf_type": "", "model_list": []}
-    local_image_dir = os.path.join(current_script_dir, 'images')
-    image_dir = str(os.path.basename(local_image_dir))
-    image_writer = DiskReaderWriter(local_image_dir)
-    pipe = UNIPipe(pdf_bytes, jso_useful_key, image_writer)
-    pipe.pipe_classify()
-    pipe.pipe_analyze()
-    pipe.pipe_parse()
-    md_content = pipe.pipe_mk_markdown(image_dir, drop_mode="none")
-    with open(f"{demo_name}.md", "w", encoding="utf-8") as f:
-        f.write(md_content)
-except Exception as e:
-    logger.exception(e)
+def main() -> None:
+    """按文件名顺序解析 demo/pdfs 中的 PDF，并分别保存解析结果。"""
+    demo_dir = Path(__file__).resolve().parent
+    pdf_dir = demo_dir / "pdfs"
+    pdf_paths = sorted(path for path in pdf_dir.iterdir() if path.is_file() and path.suffix.lower() == ".pdf")
+    if not pdf_paths:
+        print(f"未找到 PDF 文件：{pdf_dir}", flush=True)
+        return
+
+    for index, pdf_path in enumerate(pdf_paths, start=1):
+        print(f"[{index}/{len(pdf_paths)}] 正在解析：{pdf_path.name}", flush=True)
+        result = parse(
+            pdf_path,
+            tier="standard",
+            ocr_mode="auto",
+            page_range="all",
+        )
+
+        # 通过 SDK 保存 Markdown 和 JSON，每份 PDF 使用独立的输出目录。
+        output_dir = demo_dir / "output" / pdf_path.stem
+        result.save(FileBasedDataWriter(str(output_dir)))
+        print(f"解析完成，共 {len(result.pages)} 页；输出目录：{output_dir}", flush=True)
+
+
+if __name__ == "__main__":
+    main()

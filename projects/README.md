@@ -1,9 +1,7 @@
-# Welcome to the MinerU Project List
+# Welcome to the MinerU Project (Archived)
 
-## Project List
+>[!NOTE]
+> To consolidate resources, this repository has stopped accepting new project submissions and maintenance requests for existing projects.  
+> If you have an excellent project based on MinerU that you'd like to share, please submit the project link to the well-maintained community resource repository [awesome-mineru](https://github.com/opendatalab/awesome-mineru).  
+> Thank you for your support and contribution to the MinerU ecosystem!
 
-- [llama_index_rag](./llama_index_rag/README.md): Build a lightweight RAG system based on llama_index
-- [gradio_app](./gradio_app/README.md): Build a web app based on gradio
-- [web_demo](./web_demo/README.md): MinerU online [demo](https://opendatalab.com/OpenSourceTools/Extractor/PDF/) localized deployment version
-- [web_api](./web_api/README.md): Web API Based on FastAPI
-- [multi_gpu](./multi_gpu/README.md): Multi-GPU parallel processing based on LitServe
